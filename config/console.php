@@ -26,6 +26,10 @@ return [
             ],
         ],
         'db' => $db,
+        'authManager' => [
+            'class' => 'yii\rbac\DbManager', // or use 'yii\rbac\PhpManager'
+            'defaultRoles' => ['admin', 'user', 'guest'],
+        ],
     ],
     'params' => $params,
 ];

@@ -1,6 +1,8 @@
 <?php
 
 namespace app\models;
+
+use Yii;
 use app\models\gii\Profile;
 use yii\base\Model;
 
@@ -27,7 +29,6 @@ class SignupForm extends Model
 
             ['password', 'required', 'on'=>'insert'],
             ['password', 'string', 'min' => 6, 'max' => 40],
-            ['password', 'safe'],
             // TODO: how to set ->passwordInput() in view by gii??
 
             ['name', 'string', 'min' => 3, 'max' => 40],
@@ -49,13 +50,18 @@ class SignupForm extends Model
             $user->setPassword($this->password);
             $user->generateAuthKey();
 
-            $user->getProfile();
-
             if ($user->save()) {
                 $profile = new Profile();
                 $profile->name = $this->name;
                 $profile->surname = $this->surname;
                 $profile->user_id = $user->id;
+                $profile->save();
+
+                // the following three lines were added:
+                $auth = Yii::$app->authManager;
+                $authorRole = $auth->getRole('user');
+                $auth->assign($authorRole, $user->getId());
+
                 return $user;
             }
         }

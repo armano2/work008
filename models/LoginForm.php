@@ -29,6 +29,9 @@ class LoginForm extends Model
             ['rememberMe', 'boolean'],
             // password is validated by validatePassword()
             ['password', 'validatePassword'],
+
+            ['email', 'filter', 'filter' => 'trim'],
+            ['email', 'email'],
         ];
     }
 
@@ -37,9 +40,8 @@ class LoginForm extends Model
      * This method serves as the inline validation for password.
      *
      * @param string $attribute the attribute currently being validated
-     * @param array $params the additional name-value pairs given in the rule
      */
-    public function validatePassword($attribute, $params = null)
+    public function validatePassword($attribute)
     {
         if (!$this->hasErrors()) {
             $user = $this->getUser();
