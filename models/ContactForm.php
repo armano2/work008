@@ -4,17 +4,15 @@ namespace app\models;
 
 use Yii;
 use yii\base\Model;
+use app\models\gii\Contact;
+
 
 /**
  * ContactForm is the model behind the contact form.
  */
 class ContactForm extends Model
 {
-    public $name;
-    public $email;
-    public $subject;
     public $body;
-    public $verifyCode;
 
     /**
      * @return array the validation rules.
@@ -22,22 +20,8 @@ class ContactForm extends Model
     public function rules()
     {
         return [
-            // name, email, subject and body are required
-            [['name', 'email', 'subject', 'body'], 'required'],
-            // email has to be a valid email address
-            ['email', 'email'],
-            // verifyCode needs to be entered correctly
-            ['verifyCode', 'captcha'],
-        ];
-    }
-
-    /**
-     * @return array customized attribute labels
-     */
-    public function attributeLabels()
-    {
-        return [
-            'verifyCode' => 'Verification Code',
+            ['body', 'required'],  // TODO: how to force gii to set different type when regenerate?
+            ['body', 'string', 'min' => 3, 'max' => 200],
         ];
     }
 
@@ -46,15 +30,36 @@ class ContactForm extends Model
      * @param  string  $email the target email address
      * @return boolean whether the model passes validation
      */
-    public function contact($email)
+    public function contact()
     {
         if ($this->validate()) {
+            // Get email from config ... its test value -> normally we should iterate and find all by rbac here...
+
+            $websiteEmail = Yii::$app->params['websiteEmail'];
+            $websiteName = Yii::$app->params['websiteName'];
+
+            // Sent Mail 2.
             Yii::$app->mailer->compose()
-                ->setTo($email)
-                ->setFrom([$this->email => $this->name])
-                ->setSubject($this->subject)
-                ->setTextBody($this->body)
+                ->setTo(Yii::$app->params['adminEmail']) // TODO: ??
+                ->setFrom([$websiteEmail => $websiteName])
+                ->setSubject("Pojawił się nowy kontakt. Zaloguj się, aby przeczytać") // TODO: templates for mails?
+                ->setTextBody("Pojawił się nowy kontakt. Zaloguj się, aby przeczytać") // TODO: templates for mails?
                 ->send();
+
+            // Sent Mail 1.
+            Yii::$app->mailer->compose()
+                ->setTo(Yii::$app->user->identity->email)
+                ->setFrom([$websiteEmail => $websiteName])
+                ->setSubject("Formularz został dostarczony do BOK") // TODO: templates for mails?
+                ->setTextBody("Formularz został dostarczony do BOK") // TODO: templates for mails?
+                ->send();
+
+            // Save data to database..
+            $contact = new Contact();
+            // TODO: here should be some time of create... but its not specified in task...
+            $contact->message = $this->body;
+            $contact->user_id = Yii::$app->user->identity->getId();
+            $contact->save();
 
             return true;
         } else {
